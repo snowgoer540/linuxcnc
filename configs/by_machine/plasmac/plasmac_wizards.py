@@ -58,6 +58,7 @@ class wizards:
         self.configFile = self.i.find('EMC', 'MACHINE').lower() + '_wizards.cfg'
         self.builder.get_object('hbox1').connect('destroy', self.on_shutdown)
         self.tmpDir = ('/tmp/plasmac_wizards')
+        self.cutRecovering = False
         if not os.path.isdir(self.tmpDir):
             os.mkdir(self.tmpDir)
         self.fWizard = '{}/wizard.ngc'.format(self.tmpDir)
@@ -288,6 +289,16 @@ class wizards:
             except:
                 print('Could not load image for custom user button #{}'.format(button))
 
+    def on_button_clicked(self, button):
+        bNum = int(button.get_name().split('button')[1])
+        commands = self.iniButtonCode[bNum]
+        if not commands: return
+        if 'cut-recovery' in commands.lower() and hal.get_value('halui.program.is-paused'):
+            command = '{}/wizards/w_cut_recovery.py&'.format(os.getcwd())
+            msg = Popen('python ./wizards/w_cut_recovery.py',stdout=PIPE,stderr=PIPE, shell=True)
+            print(msg.communicate()[0])
+            hal.set_p('plasmac.cut-recovery', '0')
+
     def on_button_pressed(self, button):
         bNum = int(button.get_name().split('button')[1])
         commands = self.iniButtonCode[bNum]
@@ -298,7 +309,7 @@ class wizards:
                 hal.set_p('plasmac.x-offset', '0')
                 hal.set_p('plasmac.y-offset', '0')
             else:
-                hal.set_p('plasmac.xy-feed-rate', str(int(self.ccF)))
+                hal.set_p('plasmac.xy-feed-rate', str(float(self.ccF)))
                 if self.ccX or self.ccX == 0:
                     hal.set_p('plasmac.x-offset', '{:.0f}'.format((self.ccX - self.s.position[0]) / hal.get_value('plasmac.offset-scale')))
                 else:
@@ -361,7 +372,8 @@ class wizards:
             for command in commands.split('\\'):
                 if command.strip()[0] == '%':
                     command = command.strip().strip('%') + '&'
-                    Popen(command,stdout=PIPE,stderr=PIPE, shell=True)
+                    msg = Popen(command,stdout=PIPE,stderr=PIPE, shell=True)
+                    print(msg.communicate()[0])
                 else:
                     if '{' in command:
                         newCommand = subCommand = ''
@@ -475,7 +487,7 @@ class wizards:
         for n in range(10,20):
             if 'load' in self.iniButtonCode[n]:
                 pass
-            elif 'change-consumables' in self.iniButtonCode[n]:
+            elif 'change-consumables' in self.iniButtonCode[n] or 'cut-recovery' in self.iniButtonCode[n]:
                 if hal.get_value('halui.program.is-paused'):
                     self.builder.get_object('button' + str(n)).set_sensitive(True)
                 else:
