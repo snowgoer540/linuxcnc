@@ -63,7 +63,7 @@ class HandlerClass:
                 hal.set_p('plasmac.y-offset', '0')
                 hal.set_p('plasmac.xy-feed-rate', '0')
             else:
-                hal.set_p('plasmac.xy-feed-rate', str(int(self.ccF)))
+                hal.set_p('plasmac.xy-feed-rate', str(float(self.ccF)))
                 if self.ccX or self.ccX == 0:
                     hal.set_p('plasmac.x-offset', '{:.0f}'.format((self.ccX - self.s.position[0]) / hal.get_value('plasmac.offset-scale')))
                 else:

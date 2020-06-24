@@ -334,6 +334,7 @@
 configured from the ini file</property>
                     <signal name="pressed" handler="on_button_pressed" swapped="no"/>
                     <signal name="released" handler="on_button_released" swapped="no"/>
+                    <signal name="clicked" handler="on_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="right_attach">2</property>
@@ -349,6 +350,7 @@ configured from the ini file</property>
 configured from the ini file</property>
                     <signal name="pressed" handler="on_button_pressed" swapped="no"/>
                     <signal name="released" handler="on_button_released" swapped="no"/>
+                    <signal name="clicked" handler="on_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="right_attach">2</property>
@@ -365,6 +367,7 @@ configured from the ini file</property>
 configured from the ini file</property>
                     <signal name="pressed" handler="on_button_pressed" swapped="no"/>
                     <signal name="released" handler="on_button_released" swapped="no"/>
+                    <signal name="clicked" handler="on_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="right_attach">2</property>
@@ -381,6 +384,7 @@ configured from the ini file</property>
 configured from the ini file</property>
                     <signal name="pressed" handler="on_button_pressed" swapped="no"/>
                     <signal name="released" handler="on_button_released" swapped="no"/>
+                    <signal name="clicked" handler="on_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="right_attach">2</property>
@@ -397,6 +401,7 @@ configured from the ini file</property>
 configured from the ini file</property>
                     <signal name="pressed" handler="on_button_pressed" swapped="no"/>
                     <signal name="released" handler="on_button_released" swapped="no"/>
+                    <signal name="clicked" handler="on_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="right_attach">2</property>
@@ -413,6 +418,7 @@ configured from the ini file</property>
 configured from the ini file</property>
                     <signal name="pressed" handler="on_button_pressed" swapped="no"/>
                     <signal name="released" handler="on_button_released" swapped="no"/>
+                    <signal name="clicked" handler="on_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">2</property>
@@ -429,6 +435,7 @@ configured from the ini file</property>
 configured from the ini file</property>
                     <signal name="pressed" handler="on_button_pressed" swapped="no"/>
                     <signal name="released" handler="on_button_released" swapped="no"/>
+                    <signal name="clicked" handler="on_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">2</property>
@@ -446,6 +453,7 @@ configured from the ini file</property>
 configured from the ini file</property>
                     <signal name="pressed" handler="on_button_pressed" swapped="no"/>
                     <signal name="released" handler="on_button_released" swapped="no"/>
+                    <signal name="clicked" handler="on_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">2</property>
@@ -463,6 +471,7 @@ configured from the ini file</property>
 configured from the ini file</property>
                     <signal name="pressed" handler="on_button_pressed" swapped="no"/>
                     <signal name="released" handler="on_button_released" swapped="no"/>
+                    <signal name="clicked" handler="on_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">2</property>
@@ -480,6 +489,7 @@ configured from the ini file</property>
 configured from the ini file</property>
                     <signal name="pressed" handler="on_button_pressed" swapped="no"/>
                     <signal name="released" handler="on_button_released" swapped="no"/>
+                    <signal name="clicked" handler="on_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left_attach">2</property>

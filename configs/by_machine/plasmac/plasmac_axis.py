@@ -707,7 +707,7 @@ def user_button_pressed(button,commands):
             hal.set_p('plasmac.y-offset', '0')
         else:
             global ccF, ccX, ccY
-            hal.set_p('plasmac.xy-feed-rate', str(int(ccF)))
+            hal.set_p('plasmac.xy-feed-rate', str(float(ccF)))
             if ccX or ccX == 0:
                 hal.set_p('plasmac.x-offset', '{:.0f}'.format((ccX - s.position[0]) / hal.get_value('plasmac.offset-scale')))
             else:

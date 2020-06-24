@@ -48,6 +48,7 @@ pin in  float   cornerlock_threshold        "corner lock threshold (% of request
 pin in  float   current_velocity            "current machine velocity , connect to motion.current-vel";
 pin in  float   cut_feed_rate               "cut feed rate, set to 0 to use feed rate from gcod file (machine units per minute)";
 pin in  float   cut_height                  "cut height (machine units)";
+pin in  bit     cut_recovery                "recover from cut error";
 pin in  float   cut_volts                   "cut voltage (volts)";
 pin in  bit     cutting_start               "start a new cut, connect to spindle.0.on";
 pin in  bit     external_estop              "external estop input";
@@ -105,7 +106,7 @@ pin in  bit     torch_pulse_start           "torch pulse start";
 pin in  float   torch_pulse_time            "torch pulse time (seconds)";
 pin in  float   units_per_mm                "for scale calcs, connect to halui.machine.units-per-mm";
 pin in  bit     use_auto_volts              "use calculated voltage for thc baseline";
-pin in  s32     xy_feed_rate                "feed-rate for consumable change";
+pin in  float   xy_feed_rate                "feed-rate for consumable change";
 pin in  float   x_offset                    "offest to apply to axis x for consumable change";
 pin in  float   y_offset                    "offest to apply to axis y for consumable change";
 
@@ -157,6 +158,7 @@ variable int    count;                      /* for counting */
 variable int    cut_height_first;           /* cut height at start of cut */
 variable int    cut_height_last;            /* cut height at end of cut */
 variable float  cut_offset;                 /* offset from last cut end to this cut start */
+variable bool   cut_recovering;             /* recovering from cut error */
 variable bool   cut_started;                /* cut has started */
 variable int    cut_target;                 /* cut height target offset */
 variable bool   error_message;              /* 1 if error message has been sent */
@@ -262,6 +264,8 @@ typedef enum{IDLE,
              SCRIBING,
              CONSUMABLE_CHANGE_ON,
              CONSUMABLE_CHANGE_OFF,
+             CUT_RECOVERY_ON,
+             CUT_RECOVERY_OFF,
              DEBUG} state_t;
 
 typedef enum{NONE,
@@ -516,11 +520,12 @@ FUNCTION(_) {
                 /* if we get a consumable change start request and we are paused */
                 }else if(consumable_change && stop_type == PAUSE && !consumable_changing){
                     state = CONSUMABLE_CHANGE_ON;
-
                 /* if we get a consumable change stop request and we are changing consumables */
                 }else if(!consumable_change && stop_type == PAUSE && consumable_changing){
-                        state = CONSUMABLE_CHANGE_OFF;
-
+                    state = CONSUMABLE_CHANGE_OFF;
+                /* if we get a cut recovery start request and we are paused */
+                }else if(cut_recovery && stop_type == PAUSE && !cut_recovering){
+                    state = CUT_RECOVERY_ON;
                 /* if we get a torch start request and we are stopped or waiting for a restart */
             }else if((tool == CUTTING || tool == SPOTTING || probe_test) && (stop_type == NONE || stop_type == WAIT) && homed){
                     feed_hold = TRUE;
@@ -920,9 +925,16 @@ FUNCTION(_) {
                     }else{
                         requested_feed_rate = requested_velocity * 60;
                     }
-                    feed_hold = FALSE;
-                    thc_delay_timer = thc_delay;
-                    state = CUT;
+                    if(cut_recovering){
+                        angle_x_y = atan2(-y_offset_counts, -x_offset_counts);
+                        x_velocity = fabs(cut_feed_rate * velocity_scale * cos(angle_x_y));
+                        y_velocity = fabs(cut_feed_rate * velocity_scale * sin(angle_x_y));
+                        state = CUT_RECOVERY_OFF;
+                    }else{
+                        feed_hold = FALSE;
+                        thc_delay_timer = thc_delay;
+                        state = CUT;
+                    }
                 }
             }
             break;
@@ -1210,6 +1222,12 @@ FUNCTION(_) {
                         if(consumable_changing){
                             state = CONSUMABLE_CHANGE_OFF;
                         }
+                        if(cut_recovering){
+                            angle_x_y = atan2(-y_offset_counts, -x_offset_counts);
+                            x_velocity = fabs(cut_feed_rate * velocity_scale * cos(angle_x_y));
+                            y_velocity = fabs(cut_feed_rate * velocity_scale * sin(angle_x_y));
+                            state = CUT_RECOVERY_OFF;
+                        }
                     }
                 }
             }else{
@@ -1384,9 +1402,69 @@ FUNCTION(_) {
                 state = IDLE;
             }
             break;
+        case CUT_RECOVERY_ON:
+            if(program_is_running){
+                state = IDLE;
+            }
+            if(!cut_recovering){
+                cut_recovering = TRUE;
+            }
+            if(cut_recovery){
+                if(x_offset_counts != x_offset){
+                    if(x_offset_counts + (cut_feed_rate * velocity_scale) < x_offset){
+                        x_offset_counts += (cut_feed_rate * velocity_scale);
+                    }else if(x_offset_counts - (cut_feed_rate * velocity_scale) > x_offset){
+                        x_offset_counts -= (cut_feed_rate * velocity_scale);
+                    }else{
+                        x_offset_counts = x_offset;
+                    }
+                }
+                if(y_offset_counts != y_offset){
+                    if(y_offset_counts + (cut_feed_rate * velocity_scale) < y_offset){
+                        y_offset_counts += (cut_feed_rate * velocity_scale);
+                    }else if(y_offset_counts - (cut_feed_rate * velocity_scale) > y_offset){
+                        y_offset_counts -= (cut_feed_rate * velocity_scale);
+                    }else{
+                        y_offset_counts = y_offset;
+                    }
+                }
+            }else{
+                angle_x_y = atan2(-y_offset_counts, -x_offset_counts);
+                x_velocity = fabs(cut_feed_rate * velocity_scale * cos(angle_x_y));
+                y_velocity = fabs(cut_feed_rate * velocity_scale * sin(angle_x_y));
+                cut_recovering = FALSE;
+                state = CUT_RECOVERY_OFF;
+            }
+            break;
+        case CUT_RECOVERY_OFF:
+            if(x_offset_counts + x_velocity < 0){
+                x_offset_counts += x_velocity;
+            }else if(x_offset_counts - x_velocity > 0){
+                x_offset_counts -= x_velocity;
+            }else{
+                x_offset_counts = 0;
+            }
+            if(y_offset_counts + y_velocity < 0){
+                y_offset_counts += y_velocity;
+            }else if(y_offset_counts - y_velocity > 0){
+                y_offset_counts -= y_velocity;
+            }else{
+                y_offset_counts = 0;
+            }
+            if(!x_offset_counts && !y_offset_counts){
+                if(cut_recovering){
+                    cut_recovering = FALSE;
+                    feed_hold = FALSE;
+                    thc_delay_timer = thc_delay;
+                    state = CUT;
+                }else{
+                    state = IDLE;
+                }
+            }
+            break;
         case DEBUG:
             /* holding state for debugging */
-            rtapi_print_msg(RTAPI_MSG_ERR, "I have no idea how we got here...\n");
+            rtapi_print_msg(RTAPI_MSG_ERR, "We should never end up here...\n");
             break;
     }
 
